@@ -178,4 +178,103 @@ Một tài liệu hướng dẫn agent chỉ nên coi là “done” khi:
 
 Khung tài liệu tốt cho AI agent không cần phức tạp, nhưng phải **rõ ràng, cập nhật, và có thể vận hành được ngay**. Nếu cần ưu tiên theo mức tối thiểu: bắt đầu từ `PRD.md` + `tech_spec.md` + `AGENTS.md`/`CLAUDE.md` + `guardrails.md`, sau đó mở rộng dần theo độ trưởng thành của dự án.
 
-Bạn muốn mình tạo một template cụ thể cho loại dự án nào không (software development, data pipeline, enterprise workflow...)?
+Đây là cách bố trí chuẩn mà industry đang dùng:
+
+```
+my-project/
+│
+├── AGENTS.md              ← Root-level: rules cho toàn bộ project
+├── CLAUDE.md              ← Symlink hoặc copy của AGENTS.md (cho Claude Code)
+├── README.md              ← Cho con người
+├── llms.txt               ← Tóm tắt doc cho LLM (chuẩn mới nổi)
+│
+├── docs/
+│   ├── prd.md             ← Product Requirements
+│   ├── tech_spec.md       ← Technical Specification
+│   ├── plan.md            ← Implementation plan theo phase
+│   ├── architecture.md    ← Sơ đồ kiến trúc, ADR (Architecture Decision Records)
+│   └── guardrails.md      ← Governance, compliance rules (quan trọng với Đức)
+│
+├── .cursor/
+│   └── rules/             ← Rules cho Cursor IDE
+│       ├── general.mdc
+│       └── backend.mdc
+│
+├── src/
+│   ├── AGENTS.md          ← Sub-level: rules riêng cho /src
+│   │
+│   ├── frontend/
+│   │   └── AGENTS.md      ← Rules riêng: React conventions, styling...
+│   │
+│   ├── backend/
+│   │   └── AGENTS.md      ← Rules riêng: API patterns, DB conventions...
+│   │
+│   └── infra/
+│       └── AGENTS.md      ← Rules riêng: Terraform, K8s, security...
+│
+└── tests/
+    └── AGENTS.md          ← Rules riêng: test framework, coverage expectations
+```
+
+---
+
+### Nguyên tắc hoạt động — **Nearest file wins**
+
+Agent tìm `AGENTS.md` theo thứ tự từ gần đến xa — file gần nhất với file đang được edit sẽ được ưu tiên. Nhiều file có thể cùng tồn tại, và file nào gần hơn thì thắng.
+
+Ví dụ khi agent đang làm việc trong `src/frontend/Button.tsx`:
+
+1. Đọc `src/frontend/AGENTS.md` → React conventions, Tailwind rules
+2. Đọc `src/AGENTS.md` → general coding style
+3. Đọc `AGENTS.md` (root) → project-wide rules
+
+---
+
+### Nội dung mỗi sub-level `AGENTS.md` nên khác nhau
+
+**Root `AGENTS.md`** — big picture:
+
+```markdown
+# Project: Payment Processing System
+
+This is a PCI-DSS compliant payment gateway for B2B clients.
+
+## Package Manager: pnpm workspaces
+
+## Build: pnpm run build
+
+## Test: pnpm test (must pass before commit)
+
+## Language: TypeScript strict mode throughout
+```
+
+**`src/backend/AGENTS.md`** — domain-specific:
+
+```markdown
+# Backend Rules
+
+- All DB queries go through the Repository pattern, never direct ORM calls
+- Never log PII — use maskPII() helper before any logging
+- All endpoints require JWT validation via authMiddleware
+- Error responses must follow RFC 7807 (Problem Details)
+```
+
+**`src/frontend/AGENTS.md`** — frontend-specific:
+
+```markdown
+# Frontend Rules
+
+- Components in /components must be pure — no direct API calls
+- Use React Query for all server state, Zustand for client state
+- Accessibility: all interactive elements need aria-labels
+```
+
+---
+
+### Lưu ý quan trọng
+
+**`CLAUDE.md` vs `AGENTS.md`**: Claude Code dùng `CLAUDE.md`, không dùng `AGENTS.md`. Cách đơn giản nhất là tạo symlink: `ln -s AGENTS.md CLAUDE.md` để cả hai tool cùng đọc một file.
+
+**Tránh document file paths cụ thể** trong các file này — file paths thay đổi liên tục, và stale paths sẽ "đầu độc" context của agent, khiến nó tự tin tìm đến chỗ sai. Thay vào đó, mô tả **capabilities** và **domain concepts**.
+
+**`docs/`** là dành cho con người đọc — PRD, tech spec, plan. Agent có thể được chỉ dẫn để đọc các file này khi cần thiết, nhưng không tự động load như `AGENTS.md`.
