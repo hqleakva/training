@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info:
+  title: API Template
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+paths: {}
+components:
+  schemas: {}

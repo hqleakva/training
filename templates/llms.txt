@@ -1,0 +1,16 @@
+# Project Summary for LLMs
+
+Project:
+
+Purpose:
+
+Core Concepts:
+
+Critical Constraints:
+
+Key Commands:
+
+Important Files:
+
+Policies:
+
